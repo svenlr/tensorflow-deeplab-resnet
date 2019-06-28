@@ -106,31 +106,36 @@ def save(saver, sess, logdir, step):
    print('The checkpoint has been created.')
 
 
-def get_tensors_in_checkpoint_file(file_name,all_tensors=True,tensor_name=None):
-    varlist=[]
-    var_value =[]
+def get_tensors_in_checkpoint_file(file_name, all_tensors=True, tensor_name=None):
+    varlist = []
+    var_value = []
     reader = pywrap_tensorflow.NewCheckpointReader(file_name)
     if all_tensors:
-      var_to_shape_map = reader.get_variable_to_shape_map()
-      for key in sorted(var_to_shape_map):
-        varlist.append(key)
-        var_value.append(reader.get_tensor(key))
+        var_to_shape_map = reader.get_variable_to_shape_map()
+        for key in sorted(var_to_shape_map):
+            varlist.append(key)
+            var_value.append(reader.get_tensor(key))
     else:
         varlist.append(tensor_name)
         var_value.append(reader.get_tensor(tensor_name))
     return (varlist, var_value)
 
 
-def build_tensors_in_checkpoint_file(loaded_tensors):
+def match_loaded_and_memory_tensors(loaded_tensors):
     full_var_list = list()
     # Loop all loaded tensors
-    for i, tensor_name in enumerate(loaded_tensors[0]):
-        # Extract tensor
+    for i, (tensor_name, tensor_loaded) in enumerate(zip(loaded_tensors[0], loaded_tensors[1])):
         try:
-            tensor_aux = tf.get_default_graph().get_tensor_by_name(tensor_name+":0")
-            full_var_list.append(tensor_aux)
+            # Extract tensor
+            tensor_aux = tf.get_default_graph().get_tensor_by_name(tensor_name + ":0")
+            if not np.array_equal(tensor_aux.shape, tensor_loaded.shape) \
+                    and not np.array_equal(tensor_aux.shape, tensor_loaded.shape[::-1]):
+                print('Weight mismatch for tensor {}: mem: {}, loaded: {}'.format(tensor_name, tensor_aux.shape,
+                                                                                  tensor_loaded.shape))
+            else:
+                full_var_list.append(tensor_aux)
         except:
-            print('Could not load weights for tensor: ' + tensor_name)
+            print('Loaded tensor not in model: ' + tensor_name)
     return full_var_list
 
 
@@ -171,7 +176,11 @@ def main():
         image_batch, label_batch = reader.dequeue(args.batch_size)
 
     # Create network.
+    sys.stdout.flush()
+    sys.stderr.flush()
     net = DeepLabResNetModel({'data': image_batch}, is_training=args.is_training, num_classes=args.num_classes)
+    sys.stdout.flush()
+    sys.stderr.flush()
     # For a small batch size, it is better to keep 
     # the statistics of the BN layers (running means and variances)
     # frozen, and to not update the values provided by the pre-trained model. 
@@ -260,12 +269,15 @@ def main():
     
     # Load variables if the checkpoint is provided.
     if args.restore_from is not None:
-        vars_in_checkpoint  = get_tensors_in_checkpoint_file(file_name=args.restore_from)
-        loadable_tensors = build_tensors_in_checkpoint_file(vars_in_checkpoint)
+        vars_in_checkpoint = get_tensors_in_checkpoint_file(file_name=args.restore_from)
+        loadable_tensors = match_loaded_and_memory_tensors(vars_in_checkpoint)
         loadable_tensors = [v for v in loadable_tensors if 'fc' not in v.name or not args.not_restore_last]
         loader = tf.train.Saver(var_list=loadable_tensors)
         load(loader, sess, args.restore_from)
-    
+
+    sys.stdout.flush()
+    sys.stderr.flush()
+
     # Start queue threads.
     threads = tf.train.start_queue_runners(coord=coord, sess=sess)
 
