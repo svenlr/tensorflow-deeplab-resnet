@@ -15,6 +15,7 @@ import time
 
 import tensorflow as tf
 import numpy as np
+from tensorflow.python import pywrap_tensorflow
 
 from deeplab_resnet import DeepLabResNetModel, ImageReader, decode_labels, inv_preprocess, prepare_label
 
@@ -104,6 +105,35 @@ def save(saver, sess, logdir, step):
    saver.save(sess, checkpoint_path, global_step=step)
    print('The checkpoint has been created.')
 
+
+def get_tensors_in_checkpoint_file(file_name,all_tensors=True,tensor_name=None):
+    varlist=[]
+    var_value =[]
+    reader = pywrap_tensorflow.NewCheckpointReader(file_name)
+    if all_tensors:
+      var_to_shape_map = reader.get_variable_to_shape_map()
+      for key in sorted(var_to_shape_map):
+        varlist.append(key)
+        var_value.append(reader.get_tensor(key))
+    else:
+        varlist.append(tensor_name)
+        var_value.append(reader.get_tensor(tensor_name))
+    return (varlist, var_value)
+
+
+def build_tensors_in_checkpoint_file(loaded_tensors):
+    full_var_list = list()
+    # Loop all loaded tensors
+    for i, tensor_name in enumerate(loaded_tensors[0]):
+        # Extract tensor
+        try:
+            tensor_aux = tf.get_default_graph().get_tensor_by_name(tensor_name+":0")
+            full_var_list.append(tensor_aux)
+        except:
+            print('Could not load weights for tensor: ' + tensor_name)
+    return full_var_list
+
+
 def load(saver, sess, ckpt_path):
     '''Load trained weights.
     
@@ -121,7 +151,7 @@ def main():
     
     h, w = map(int, args.input_size.split(','))
     input_size = (h, w)
-    
+
     tf.set_random_seed(args.random_seed)
     
     # Create queue coordinator.
@@ -133,13 +163,13 @@ def main():
             args.data_dir,
             args.data_list,
             input_size,
-            args.random_scale,
-            args.random_mirror,
+            True,  # args.random_scale
+            True,  # args.random_mirror
             args.ignore_label,
             IMG_MEAN,
             coord)
         image_batch, label_batch = reader.dequeue(args.batch_size)
-    
+
     # Create network.
     net = DeepLabResNetModel({'data': image_batch}, is_training=args.is_training, num_classes=args.num_classes)
     # For a small batch size, it is better to keep 
@@ -187,6 +217,9 @@ def main():
     labels_summary = tf.py_func(decode_labels, [label_batch, args.save_num_images, args.num_classes], tf.uint8)
     preds_summary = tf.py_func(decode_labels, [pred, args.save_num_images, args.num_classes], tf.uint8)
     
+    if not os.path.exists(args.snapshot_dir):
+        os.mkdir(args.snapshot_dir)
+        
     total_summary = tf.summary.image('images', 
                                      tf.concat(axis=2, values=[images_summary, labels_summary, preds_summary]), 
                                      max_outputs=args.save_num_images) # Concatenate row-wise.
@@ -227,7 +260,10 @@ def main():
     
     # Load variables if the checkpoint is provided.
     if args.restore_from is not None:
-        loader = tf.train.Saver(var_list=restore_var)
+        vars_in_checkpoint  = get_tensors_in_checkpoint_file(file_name=args.restore_from)
+        loadable_tensors = build_tensors_in_checkpoint_file(vars_in_checkpoint)
+        loadable_tensors = [v for v in loadable_tensors if 'fc' not in v.name or not args.not_restore_last]
+        loader = tf.train.Saver(var_list=loadable_tensors)
         load(loader, sess, args.restore_from)
     
     # Start queue threads.
@@ -238,7 +274,7 @@ def main():
         start_time = time.time()
         feed_dict = { step_ph : step }
         
-        if step % args.save_pred_every == 0:
+        if step % args.save_pred_every == 0 or step == args.num_steps-1:
             loss_value, images, labels, preds, summary, _ = sess.run([reduced_loss, image_batch, label_batch, pred, total_summary, train_op], feed_dict=feed_dict)
             summary_writer.add_summary(summary, step)
             save(saver, sess, args.snapshot_dir, step)
