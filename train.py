@@ -302,7 +302,12 @@ def main():
     # Start queue threads.
     threads = tf.train.start_queue_runners(coord=coord, sess=sess)
 
-    snapshot_dir = os.path.join(args.snapshot_dir, '_'.join(sys.argv[1:]).replace('-', '').replace('/', '-'))
+    if args.snapshot_dir == SNAPSHOT_DIR:
+        snapshot_dir = os.path.join(args.snapshot_dir, '_'.join(sys.argv[1:]).replace('--', '').replace('/', '-'))
+    else:
+        snapshot_dir = args.snapshot_dir
+
+    os.makedirs(snapshot_dir, exist_ok=True)
 
     # Iterate over training steps.
     for step in range(args.num_steps):
