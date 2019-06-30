@@ -254,7 +254,7 @@ def main():
     base_lr = tf.constant(args.learning_rate)
     step_ph = tf.placeholder(dtype=tf.float32, shape=())
     learning_rate = tf.scalar_mul(base_lr, tf.pow((1 - step_ph / args.num_steps), args.power))
-    
+
     opt_conv = tf.train.MomentumOptimizer(learning_rate, args.momentum)
     opt_fc_w = tf.train.MomentumOptimizer(learning_rate * 10.0, args.momentum)
     opt_fc_b = tf.train.MomentumOptimizer(learning_rate * 20.0, args.momentum)
@@ -302,10 +302,16 @@ def main():
     # Start queue threads.
     threads = tf.train.start_queue_runners(coord=coord, sess=sess)
 
-    if args.snapshot_dir == SNAPSHOT_DIR:
-        snapshot_dir = args.snapshot_dir + '_' + '_'.join(sys.argv[1:]).replace('--', '').replace('/', '-')
-    else:
-        snapshot_dir = args.snapshot_dir
+    snapshot_dir = args.snapshot_dir
+
+    for i in range(1, len(sys.argv)):
+        if sys.argv[i].startswith('--snapshot-dir'):
+            i += 1
+            continue
+        if sys.argv[i].startswith('--'):
+            continue
+        else:
+            snapshot_dir += '_' + sys.argv[i].replace('/', '-')
 
     os.makedirs(snapshot_dir, exist_ok=True)
 
@@ -313,7 +319,7 @@ def main():
     for step in range(args.num_steps):
         start_time = time.time()
         feed_dict = { step_ph : step }
-        
+
         if step % args.save_pred_every == 0 or step == args.num_steps-1:
             loss_value, images, labels, preds, summary, _ = sess.run([reduced_loss, image_batch, label_batch, pred, total_summary, train_op], feed_dict=feed_dict)
             summary_writer.add_summary(summary, step)
