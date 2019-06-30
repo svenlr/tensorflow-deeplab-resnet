@@ -303,7 +303,7 @@ def main():
     threads = tf.train.start_queue_runners(coord=coord, sess=sess)
 
     if args.snapshot_dir == SNAPSHOT_DIR:
-        snapshot_dir = os.path.join(args.snapshot_dir, '_'.join(sys.argv[1:]).replace('--', '').replace('/', '-'))
+        snapshot_dir = args.snapshot_dir + '_' + '_'.join(sys.argv[1:]).replace('--', '').replace('/', '-')
     else:
         snapshot_dir = args.snapshot_dir
 
