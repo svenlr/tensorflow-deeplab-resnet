@@ -328,7 +328,9 @@ def main():
         else:
             loss_value, _ = sess.run([reduced_loss, train_op], feed_dict=feed_dict)
         duration = time.time() - start_time
-        print('step {:d} \t loss = {:.3f}, ({:.3f} sec/step)'.format(step, loss_value, duration))
+        print('{:2.2f}% step {:d}/{:d} \t loss = {:.3f} , ({:.3f} sec/step)'.format(float(step / num_steps) * 100., step + 1, num_steps, loss_value, duration))
+        sys.stdout.flush()
+        sys.stderr.flush()
     coord.request_stop()
     coord.join(threads)
 
