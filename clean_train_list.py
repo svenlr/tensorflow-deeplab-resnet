@@ -28,7 +28,7 @@ def clean_train_list(train_list_contents):
     lines = train_list_contents.split('\n')
 
     cleaned_list = joblib.Parallel(n_jobs=12)(
-        joblib.delayed(check_sample)(line) for line in tqdm(lines, desc="clean train.list"))
+        joblib.delayed(check_sample)(line) for line in tqdm(lines, desc="clean data list"))
 
     output = ''.join(cleaned_list)
 
