@@ -5,6 +5,7 @@ from deeplab_resnet import decode_labels
 from segmentation_util import MERGE_LISTS
 
 if __name__ == '__main__':
+    print(len(MERGE_LISTS))
     data_list = sys.argv[1]
 
     with open(data_list, 'r') as f:
