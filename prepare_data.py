@@ -16,7 +16,7 @@ def merge_annotation(annotations_to_merge, segmentations_path, segmentations_com
     images = []
     for ann_file in annotations_to_merge:
         src_path = os.path.join(segmentations_path, ann_file)
-        images.append(cv2.imread(src_path, cv2.IMREAD_UNCHANGED)[:, :, 2])
+        images.append(cv2.imread(src_path, cv2.IMREAD_UNCHANGED))
     dst = np.max(images, axis=0)
     identifier = int(annotations_to_merge[0].split("_")[0])
     target_path = os.path.join(segmentations_combined_path, "{}.png".format(identifier))
@@ -32,8 +32,8 @@ def combine_segmentations(segmentations_path, segmentations_combined_path):
         image_id_to_annotations_map[annotation_file.split("_")[0]].append(annotation_file)
 
     joblib.Parallel(n_jobs=12)(
-        joblib.delayed(merge_annotation)(annotations_per_image, segmentations_path, segmentations_combined_path) for
-        annotations_per_image in tqdm(image_id_to_annotations_map.values(), desc="combine segmentations"))
+        joblib.delayed(merge_annotation)(annotations_per_image, segmentations_path, segmentations_combined_path) for annotations_per_image in
+        tqdm(image_id_to_annotations_map.values(), desc="combine segmentations"))
 
 
 def gen_train_list(images_directory, segmentations_directory):
@@ -53,7 +53,7 @@ def gen_train_list(images_directory, segmentations_directory):
 def create_segmentation_list_string(base_path):
     images_path = os.path.join(base_path, "images")
     segmentations_path = os.path.join(base_path, "parsing_annos")
-    segmentations_combined_path = os.path.join(base_path, "parsing_annos_combined")
+    segmentations_combined_path = os.path.join(base_path, "parsing_annos_combined_4c")
     os.makedirs(segmentations_combined_path, exist_ok=True)
     combine_segmentations(segmentations_path, segmentations_combined_path)
     if os.sep in output_file:
@@ -69,12 +69,12 @@ if __name__ == '__main__':
     train_path = os.path.join(dataset_path, 'train')
     val_path = os.path.join(dataset_path, 'val')
 
-    output_file = sys.argv[2] if len(sys.argv) > 2 else "train.list"
+    output_file = sys.argv[2] if len(sys.argv) > 2 else "train_4c.list"
 
     contents = create_segmentation_list_string(train_path)
     contents += create_segmentation_list_string(val_path)
-train_path
-with open(output_file, "w") as f:
-    if contents[-1] == '\n':
-        contents = contents[:-1]
-    f.write(contents)
+
+    with open(output_file, "w") as f:
+        if contents[-1] == '\n':
+            contents = contents[:-1]
+        f.write(contents)
