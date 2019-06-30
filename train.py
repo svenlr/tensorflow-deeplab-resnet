@@ -309,9 +309,10 @@ def main():
             i += 1
             continue
         if sys.argv[i].startswith('--'):
-            continue
+            words = sys.argv[i].replace('--', '').split('-')
+            snapshot_dir += '_' + ''.join([w[0] for w in words]) + "="
         else:
-            snapshot_dir += '_' + sys.argv[i].replace('/', '-')
+            snapshot_dir += sys.argv[i].replace('/', '-')
 
     os.makedirs(snapshot_dir, exist_ok=True)
 
