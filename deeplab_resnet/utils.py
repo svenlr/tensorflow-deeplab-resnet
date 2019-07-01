@@ -2,17 +2,25 @@ from PIL import Image
 import numpy as np
 import tensorflow as tf
 
+classes = ["background", "cap/hat", "helmet", "face", "hair", "left-arm", "right-arm", "left-hand", "right-hand",
+              "protector", "bikini/bra", "jacket/windbreaker/hoodie", "t-shirt", "polo-shirt", "sweater", "singlet",
+              "torso-skin", "pants", "shorts/swim-shorts", "skirt", "stockings", "socks", "left-boot", "right-boot",
+              "left-shoe", "right-shoe", "left-highheel", "right-highheel", "left-sandal", "right-sandal", "left-leg",
+              "right-leg", "left-foot", "right-foot", "coat", "dress", "robe", "jumpsuit", "other-full-body-clothes",
+           "headwear", "backpack", "ball", "bats", "belt", "bottle", "carrybag", "cases", "sunglasses", "eyewear",
+              "glove", "scarf", "umbrella", "wallet/purse", "watch", "wristband", "tie", "other-accessary",
+              "other-upper-body-clothes", "other-lower-body-clothes"]
+
+
+def get_spaced_colors(n):
+    max_value = 16581375  # 255**3
+    interval = int(max_value / n)
+    colors = [hex(I)[2:].zfill(6) for I in range(0, max_value, interval)]
+
+    return [(int(i[:2], 16), int(i[2:4], 16), int(i[4:], 16)) for i in colors][::-1]
+
 # colour map
-label_colours = [(0,0,0)
-                # 0=background
-                ,(128,0,0),(0,128,0),(128,128,0),(0,0,128),(128,0,128)
-                # 1=aeroplane, 2=bicycle, 3=bird, 4=boat, 5=bottle
-                ,(0,128,128),(128,128,128),(64,0,0),(192,0,0),(64,128,0)
-                # 6=bus, 7=car, 8=cat, 9=chair, 10=cow
-                ,(192,128,0),(64,0,128),(192,0,128),(64,128,128),(192,128,128)
-                # 11=diningtable, 12=dog, 13=horse, 14=motorbike, 15=person
-                ,(0,64,0),(128,64,0),(0,192,0),(128,192,0),(0,64,128)]
-                # 16=potted plant, 17=sheep, 18=sofa, 19=train, 20=tv/monitor
+label_colours = [(0,0,0)] + get_spaced_colors(40) + [hash(name) % 16581375 for name in classes]
 
 def decode_labels(mask, num_images=1, num_classes=21):
     """Decode batch of segmentation masks.
