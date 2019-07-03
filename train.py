@@ -275,7 +275,7 @@ def main():
     train_op = tf.group(*train_op_group_list)
 
 
-    # Set up tf session and initialize variables. 
+    # Set up tf session and initialize variables.
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     sess = tf.Session(config=config)
@@ -317,6 +317,19 @@ def main():
     with open(os.path.join(snapshot_dir, "args.json"), "+w") as f:
         f.write(json.dumps(args.__dict__, indent=2))
 
+    def should_print(step):
+        if step < 100:
+            return True
+        elif step < 1000:
+            return step % 100 == 0
+        elif step < 10000:
+            return step % 1000 == 0
+        else:
+            return step % 10000 == 0
+
+    loss_sum = 0
+    num_loss_sum = 0
+
     # Iterate over training steps.
     for step in range(args.num_steps):
         start_time = time.time()
@@ -328,8 +341,14 @@ def main():
             save(saver, sess, snapshot_dir, step)
         else:
             loss_value, _ = sess.run([reduced_loss, train_op], feed_dict=feed_dict)
+        loss_sum += loss_value
+        num_loss_sum += 1
         duration = time.time() - start_time
-        print('{:2.2f}% step {:d}/{:d} \t loss = {:.3f} , ({:.3f} sec/step)'.format(float(step / num_steps) * 100., step + 1, num_steps, loss_value, duration))
+        if should_print(step) or step == num_steps-1:
+            print('{:2.2f}% step {:d}/{:d} \t loss = {:.3f} , ({:.3f} sec/step)'.format(float(step / num_steps) * 100., step, num_steps, loss_sum / num_loss_sum, duration))
+            loss_sum = 0
+            num_loss_sum = 0
+
         sys.stdout.flush()
         sys.stderr.flush()
     coord.request_stop()
