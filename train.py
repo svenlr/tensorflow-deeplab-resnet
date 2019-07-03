@@ -302,9 +302,18 @@ def main():
 
     snapshot_dir = args.snapshot_dir
 
+    skip_next_arg_print = False
+
     for i in range(1, len(sys.argv)):
+        if skip_next_arg_print:
+            skip_next_arg_print = False
+            continue
+
         if sys.argv[i].startswith('--snapshot-dir'):
-            i += 1
+            skip_next_arg_print = True
+            continue
+        if sys.argv[i].startswith('--restore-from'):
+            skip_next_arg_print = True
             continue
         if sys.argv[i].startswith('--'):
             words = sys.argv[i].replace('--', '').split('-')
