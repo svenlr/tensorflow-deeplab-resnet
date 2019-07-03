@@ -283,23 +283,6 @@ def main():
 
     sess.run(init)
 
-    # Saver for storing checkpoints of the model.
-    saver = tf.train.Saver(var_list=tf.global_variables(), max_to_keep=50)
-
-    # Load variables if the checkpoint is provided.
-    if args.restore_from is not None:
-        vars_in_checkpoint = get_tensors_in_checkpoint_file(file_name=args.restore_from)
-        loadable_tensors = match_loaded_and_memory_tensors(vars_in_checkpoint)
-        loadable_tensors = [v for v in loadable_tensors if 'fc' not in v.name or not args.not_restore_last]
-        loader = tf.train.Saver(var_list=loadable_tensors)
-        load(loader, sess, args.restore_from)
-
-    sys.stdout.flush()
-    sys.stderr.flush()
-
-    # Start queue threads.
-    threads = tf.train.start_queue_runners(coord=coord, sess=sess)
-
     snapshot_dir = args.snapshot_dir
 
     skip_next_arg_print = False
@@ -312,14 +295,37 @@ def main():
         if sys.argv[i].startswith('--snapshot-dir'):
             skip_next_arg_print = True
             continue
-        if sys.argv[i].startswith('--restore-from'):
-            skip_next_arg_print = True
-            continue
         if sys.argv[i].startswith('--'):
             words = sys.argv[i].replace('--', '').split('-')
             snapshot_dir += '_' + ''.join([w[0] for w in words]) + "="
         else:
             snapshot_dir += sys.argv[i].replace('/', '-')
+
+    # Saver for storing checkpoints of the model.
+    saver = tf.train.Saver(var_list=tf.global_variables(), max_to_keep=50)
+
+    start_from_step = 0
+
+    # Load variables if the checkpoint is provided.
+    if args.restore_from is not None:
+        if args.restore_from == RESTORE_FROM and os.path.exists(snapshot_dir) and len(os.listdir(snapshot_dir)) >= 3:
+            restore_path = tf.train.latest_checkpoint(snapshot_dir)
+            print("Auto restoring weights from " + str(restore_path))
+        else:
+            restore_path = args.restore_from
+        start_from_step = int(restore_path.split("-")[-1])
+        print("Auto starting from step " + str(start_from_step) + " (detected from checkpoint file)")
+        vars_in_checkpoint = get_tensors_in_checkpoint_file(file_name=restore_path)
+        loadable_tensors = match_loaded_and_memory_tensors(vars_in_checkpoint)
+        loadable_tensors = [v for v in loadable_tensors if 'fc' not in v.name or not args.not_restore_last]
+        loader = tf.train.Saver(var_list=loadable_tensors)
+        load(loader, sess, restore_path)
+
+    sys.stdout.flush()
+    sys.stderr.flush()
+
+    # Start queue threads.
+    threads = tf.train.start_queue_runners(coord=coord, sess=sess)
 
     os.makedirs(snapshot_dir, exist_ok=True)
 
@@ -340,7 +346,7 @@ def main():
     num_loss_sum = 0
 
     # Iterate over training steps.
-    for step in range(args.num_steps):
+    for step in range(start_from_step, args.num_steps):
         start_time = time.time()
         feed_dict = { step_ph : step }
 
