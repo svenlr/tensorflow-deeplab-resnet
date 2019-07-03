@@ -161,8 +161,6 @@ def file_len(fname):
 def main():
     """Create the model and start the training."""
     args = get_arguments()
-    with open(os.path.join(args.snapshot_dir, "args.json"), "+w") as f:
-        f.write(json.dumps(args.__dict__, indent=2))
 
     h, w = map(int, args.input_size.split(','))
     input_size = (h, w)
@@ -315,6 +313,9 @@ def main():
             snapshot_dir += sys.argv[i].replace('/', '-')
 
     os.makedirs(snapshot_dir, exist_ok=True)
+
+    with open(os.path.join(snapshot_dir, "args.json"), "+w") as f:
+        f.write(json.dumps(args.__dict__, indent=2))
 
     # Iterate over training steps.
     for step in range(args.num_steps):
