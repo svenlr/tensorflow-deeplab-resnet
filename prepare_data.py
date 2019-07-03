@@ -12,20 +12,17 @@ from clean_train_list import clean_train_list
 from segmentation_util import *
 
 
-def merge_annotations(annotation_files_to_merge, segmentations_path, segmentations_combined_path):
-    dropped_category_ids = [CATEGORY_TO_IDX[category] for category in DROP_IMAGES_WITH_CATEGORIES]
+def merge_annotations(annotation_files_to_merge, segmentations_path, segmentations_combined_path, merger):
     if len(annotation_files_to_merge) == 0:
         return
     annotation_data_list = []
     for ann_file in annotation_files_to_merge:
         src_path = os.path.join(segmentations_path, ann_file)
         annotation_data = cv2.imread(src_path, cv2.IMREAD_UNCHANGED)[:, :, 2]
-        class_num_idx = np.argmax(annotation_data > 0)
-        class_num = np.ravel(annotation_data)[class_num_idx]
-        if class_num in dropped_category_ids:
+        if merger.should_drop_whole_image(annotation_data):
             return
         else:
-            annotation_data = merge_and_rename_categories(annotation_data)
+            annotation_data = merger.merge_and_rename_categories(annotation_data)
             if annotation_data is not None:
                 annotation_data_list.append(annotation_data)
     identifier = int(annotation_files_to_merge[0].split("_")[0])
@@ -37,16 +34,20 @@ def merge_annotations(annotation_files_to_merge, segmentations_path, segmentatio
         print(str(identifier) + " has no annotations")
 
 
-def combine_segmentations(segmentations_path, segmentations_combined_path):
-    os.makedirs(segmentations_combined_path, exist_ok=True)
+def combine_segmentations(segmentations_path, seg_combined_path, max_num_images=None):
+    os.makedirs(seg_combined_path, exist_ok=True)
     annotation_files = os.listdir(segmentations_path)
+    if max_num_images is not None:
+        annotation_files = [a for a in annotation_files if 0 <= int(a.split("_")[0]) - max_num_images <= max_num_images]
+
+    merger = SegmentationMerge(MERGE_LISTS_EXTREME, DROP_IMAGES_WITH_CATEGORIES_EXTREME)
 
     image_id_to_annotations_map = dict((annotation.split("_")[0], []) for annotation in annotation_files)
     for annotation_file in annotation_files:
         image_id_to_annotations_map[annotation_file.split("_")[0]].append(annotation_file)
 
     joblib.Parallel(n_jobs=12)(
-        joblib.delayed(merge_annotations)(annotations_per_image, segmentations_path, segmentations_combined_path) for
+        joblib.delayed(merge_annotations)(annotations_per_image, segmentations_path, seg_combined_path, merger) for
         annotations_per_image in tqdm(image_id_to_annotations_map.values(), desc="combine segmentations"))
 
 
@@ -64,12 +65,12 @@ def gen_train_list(images_directory, segmentations_directory):
     return res
 
 
-def create_segmentation_list_string(base_path):
+def create_segmentation_list_string(base_path, max_num_images=None):
     images_path = os.path.join(base_path, "images")
     segmentations_path = os.path.join(base_path, "parsing_annos")
-    segmentations_combined_path = os.path.join(base_path, "parsing_annos_merge")
+    segmentations_combined_path = os.path.join(base_path, "parsing_annos_extreme")
     os.makedirs(segmentations_combined_path, exist_ok=True)
-    combine_segmentations(segmentations_path, segmentations_combined_path)
+    combine_segmentations(segmentations_path, segmentations_combined_path, max_num_images=max_num_images)
     if os.sep in output_file:
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
@@ -83,10 +84,12 @@ if __name__ == '__main__':
     train_path = os.path.join(dataset_path, 'train')
     val_path = os.path.join(dataset_path, 'val')
 
-    output_file = sys.argv[2] if len(sys.argv) > 2 else "train_merge.list"
+    output_file = sys.argv[2] if len(sys.argv) > 2 else "train_merge_more.list"
 
-    contents = create_segmentation_list_string(train_path)
-    contents += create_segmentation_list_string(val_path)
+    max_num_images = int(sys.argv[3]) if len(sys.argv) > 3 else None
+
+    contents = create_segmentation_list_string(train_path, max_num_images=max_num_images)
+    contents += create_segmentation_list_string(val_path, max_num_images=max_num_images)
 
     with open(output_file, "w") as f:
         if contents[-1] == '\n':
