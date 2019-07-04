@@ -161,6 +161,8 @@ def file_len(fname):
 def main():
     """Create the model and start the training."""
     args = get_arguments()
+    # we have to do this, otherwise, the stock wshp head would not work anymore
+    args.freeze_convolutions = True
 
     h, w = map(int, args.input_size.split(','))
     input_size = (h, w)
@@ -201,19 +203,21 @@ def main():
     # Which variables to load. Running means and variances are not trainable,
     # thus all_variables() should be restored.
     all_trainable = [v for v in tf.trainable_variables() if 'beta' not in v.name and 'gamma' not in v.name]
-    fc_trainable = [v for v in all_trainable if 'fc' in v.name]
+    fc_trainable = [v for v in all_trainable if 'fc' in v.name and '_extra' in v.name]
     conv_trainable = [v for v in all_trainable if 'fc' not in v.name] # lr * 1.0
     fc_w_trainable = [v for v in fc_trainable if 'weights' in v.name] # lr * 10.0
     fc_b_trainable = [v for v in fc_trainable if 'biases' in v.name] # lr * 20.0
 
     if args.freeze_convolutions:
         print("freezing backbone")
-        all_trainable = [v for v in all_trainable if v not in conv_trainable]
+        all_trainable = [v for v in fc_trainable]
         conv_trainable = []
     assert(len(all_trainable) == len(fc_trainable) + len(conv_trainable))
     assert(len(fc_trainable) == len(fc_w_trainable) + len(fc_b_trainable))
 
     print("training {} variables out of total {} trainable variables".format(len(all_trainable), len(tf.trainable_variables())))
+    trainable_names = [v.name for v in all_trainable]
+    print("trained_layers:\n" + '\n\t'.join(trainable_names))
 
     # Predictions: ignoring all predictions with labels greater or equal than n_classes
     raw_prediction = tf.reshape(raw_output, [-1, args.num_classes])
