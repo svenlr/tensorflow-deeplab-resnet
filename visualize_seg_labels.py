@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 import deeplab_resnet.utils
 from deeplab_resnet import decode_labels
-from segmentation_util import MERGE_LISTS
+from segmentation_util import *
 
 if __name__ == '__main__':
     data_list = sys.argv[1]
@@ -11,7 +11,7 @@ if __name__ == '__main__':
     with open(data_list, 'r') as f:
         lines = f.read().split('\n')
 
-    print(len(lines))
+    print(len(MERGE_LISTS_TINY))
 
     i = 0
     for line in lines:

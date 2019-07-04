@@ -82,6 +82,7 @@ MERGE_LISTS_TINY = [
     ["cap/hat", "helmet", "headwear"],
     "face",
     "hair",
+    ["left-leg", "right-leg"],
     ["left-arm", "right-arm", "watch", "wristband"],
     ["left-hand", "right-hand", "glove"],
     ["jacket/windbreaker/hoodie", "coat", "sweater", "t-shirt", "polo-shirt", "singlet", "other-upper-body-clothes",
@@ -89,9 +90,7 @@ MERGE_LISTS_TINY = [
      "tie", "scarf", "bikini/bra", "stockings", "belt", "robe"],
     "torso-skin",
     ["left-boot", "right-boot", "left-shoe", "right-shoe", "left-sandal", "right-sandal", "left-highheel",
-     "right-highheel"],
-    ["left-foot", "right-foot"],
-    ["left-leg", "right-leg"],
+     "right-highheel", "left-foot", "right-foot", "socks"],
     "sunglasses",
     "eyewear"]
 
