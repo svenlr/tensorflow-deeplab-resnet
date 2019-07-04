@@ -40,7 +40,7 @@ def combine_segmentations(segmentations_path, seg_combined_path, max_num_images=
     if max_num_images is not None:
         annotation_files = [a for a in annotation_files if 0 <= int(a.split("_")[0]) - max_num_images <= max_num_images]
 
-    merger = SegmentationMerge(MERGE_LISTS_EXTREME, DROP_IMAGES_WITH_CATEGORIES_EXTREME)
+    merger = SegmentationMerge(MERGE_LISTS_TINY, DROP_IMAGES_WITH_CATEGORIES_TINY)
 
     image_id_to_annotations_map = dict((annotation.split("_")[0], []) for annotation in annotation_files)
     for annotation_file in annotation_files:
@@ -68,7 +68,7 @@ def gen_train_list(images_directory, segmentations_directory):
 def create_segmentation_list_string(base_path, max_num_images=None):
     images_path = os.path.join(base_path, "images")
     segmentations_path = os.path.join(base_path, "parsing_annos")
-    segmentations_combined_path = os.path.join(base_path, "parsing_annos_extreme")
+    segmentations_combined_path = os.path.join(base_path, "parsing_annos_tiny")
     os.makedirs(segmentations_combined_path, exist_ok=True)
     combine_segmentations(segmentations_path, segmentations_combined_path, max_num_images=max_num_images)
     if os.sep in output_file:
@@ -84,7 +84,7 @@ if __name__ == '__main__':
     train_path = os.path.join(dataset_path, 'train')
     val_path = os.path.join(dataset_path, 'val')
 
-    output_file = sys.argv[2] if len(sys.argv) > 2 else "train_merge_more.list"
+    output_file = sys.argv[2] if len(sys.argv) > 2 else "train_merge_tiny.list"
 
     max_num_images = int(sys.argv[3]) if len(sys.argv) > 3 else None
 
