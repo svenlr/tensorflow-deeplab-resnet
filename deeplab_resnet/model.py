@@ -7,7 +7,7 @@ from kaffe.tensorflow import Network
 import tensorflow as tf
 
 class DeepLabResNetModel(Network):
-    def setup(self, is_training, num_classes, is_inference):
+    def setup(self, is_training, num_classes, is_inference, add_extra_head):
         '''Network definition.
         
         Args:
@@ -410,41 +410,50 @@ class DeepLabResNetModel(Network):
         (self.feed('res5c_relu')
              .atrous_conv(3, 3, 7, 24, padding='SAME', relu=False, name='fc1_voc12_c3'))
 
-        # second head for custom classes
-        (self.feed('res5c_relu')
-             .atrous_conv(3, 3, num_classes, 6, padding='SAME', relu=False, name='fc1_voc12_c0_extra'))
+        if add_extra_head:
+            # second head for custom classes
+            (self.feed('res5c_relu')
+                 .atrous_conv(3, 3, num_classes, 6, padding='SAME', relu=False, name='fc1_voc12_c0_extra'))
 
-        (self.feed('res5c_relu')
-             .atrous_conv(3, 3, num_classes, 12, padding='SAME', relu=False, name='fc1_voc12_c1_extra'))
+            (self.feed('res5c_relu')
+                 .atrous_conv(3, 3, num_classes, 12, padding='SAME', relu=False, name='fc1_voc12_c1_extra'))
 
-        (self.feed('res5c_relu')
-             .atrous_conv(3, 3, num_classes, 18, padding='SAME', relu=False, name='fc1_voc12_c2_extra'))
+            (self.feed('res5c_relu')
+                 .atrous_conv(3, 3, num_classes, 18, padding='SAME', relu=False, name='fc1_voc12_c2_extra'))
 
-        (self.feed('res5c_relu')
-             .atrous_conv(3, 3, num_classes, 24, padding='SAME', relu=False, name='fc1_voc12_c3_extra'))
+            (self.feed('res5c_relu')
+                 .atrous_conv(3, 3, num_classes, 24, padding='SAME', relu=False, name='fc1_voc12_c3_extra'))
 
-        if is_inference:
-            # concatenate both heads in inference
+            if is_inference:
+                # concatenate both heads in inference
+                (self.feed('fc1_voc12_c0',
+                           'fc1_voc12_c1',
+                           'fc1_voc12_c2',
+                           'fc1_voc12_c3')
+                     .add(name='fc1_voc12_stock'))
+
+                (self.feed('fc1_voc12_c0_extra',
+                           'fc1_voc12_c1_extra',
+                           'fc1_voc12_c2_extra',
+                           'fc1_voc12_c3_extra')
+                     .add(name='fc1_voc12_extra'))
+
+                (self.feed('fc1_voc12_stock',
+                           'fc1_voc12_extra')
+                     .concat(name='fc1_voc12', axis=3))
+            else:
+                # use only the extra head in training. the stock head shall be untouched.
+                (self.feed('fc1_voc12_c0_extra',
+                           'fc1_voc12_c1_extra',
+                           'fc1_voc12_c2_extra',
+                           'fc1_voc12_c3_extra')
+                     .add(name='fc1_voc12'))
+        else:
+            # use only stock head
             (self.feed('fc1_voc12_c0',
                        'fc1_voc12_c1',
                        'fc1_voc12_c2',
                        'fc1_voc12_c3')
-                 .add(name='fc1_voc12_stock'))
-
-            (self.feed('fc1_voc12_c0_extra',
-                       'fc1_voc12_c1_extra',
-                       'fc1_voc12_c2_extra',
-                       'fc1_voc12_c3_extra')
-                 .add(name='fc1_voc12_extra'))
-
-            (self.feed('fc1_voc12_stock',
-                       'fc1_voc12_extra')
-                 .concat(name='fc1_voc12', axis=3))
-        else:
-            # use only the extra head in training. the stock head shall be untouched.
-            (self.feed('fc1_voc12_c0_extra',
-                       'fc1_voc12_c1_extra',
-                       'fc1_voc12_c2_extra',
-                       'fc1_voc12_c3_extra')
                  .add(name='fc1_voc12'))
+
 

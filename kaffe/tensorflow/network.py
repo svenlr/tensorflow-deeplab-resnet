@@ -32,7 +32,8 @@ def layer(op):
 
 class Network(object):
 
-    def __init__(self, inputs, trainable=True, is_training=False, is_inference=False, num_classes=21):
+    def __init__(self, inputs, trainable=True, is_training=False, is_inference=False, add_extra_head=True,
+                 num_classes=21):
         # The input nodes for this network
         self.inputs = inputs
         # The current list of terminal nodes
@@ -45,9 +46,10 @@ class Network(object):
         self.use_dropout = tf.placeholder_with_default(tf.constant(1.0),
                                                        shape=[],
                                                        name='use_dropout')
-        self.setup(is_training=is_training, num_classes=num_classes, is_inference=is_inference)
+        self.setup(is_training=is_training, num_classes=num_classes, is_inference=is_inference,
+                   add_extra_head=add_extra_head)
 
-    def setup(self, is_training, num_classes=7, is_inference=False):
+    def setup(self, is_training, num_classes=7, is_inference=False, add_extra_head=True):
         '''Construct the network. '''
         raise NotImplementedError('Must be implemented by the subclass.')
 
@@ -186,7 +188,7 @@ class Network(object):
                 # ReLU non-linearity
                 output = tf.nn.relu(output, name=scope.name)
             return output
-        
+
     @layer
     def relu(self, input, name):
         return tf.nn.relu(input, name=name)
@@ -256,7 +258,7 @@ class Network(object):
             else:
                 raise ValueError('Rank 2 tensor input expected for softmax!')
         return tf.nn.softmax(input, name)
-        
+
     @layer
     def batch_normalization(self, input, name, is_training, activation_fn=None, scale=True):
         with tf.variable_scope(name) as scope:
