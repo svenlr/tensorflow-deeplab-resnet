@@ -349,6 +349,9 @@ def main():
     loss_sum = 0
     num_loss_sum = 0
 
+    if start_from_step == 1:
+        start_from_step = 0
+
     # Iterate over training steps.
     for step in range(start_from_step, args.num_steps):
         start_time = time.time()
