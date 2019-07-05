@@ -103,6 +103,16 @@ MERGE_LISTS_VERY_TINY = [
      "tie", "scarf", "bikini/bra", "stockings", "belt", "robe"],
     "torso-skin"]
 
+MERGE_LISTS_VERY_EXTREME = [
+    "background",
+    ["left-leg", "right-leg"],
+    ["left-arm", "right-arm", "watch", "wristband", "left-hand", "right-hand", "glove"],
+    ["jacket/windbreaker/hoodie", "coat", "sweater", "t-shirt", "polo-shirt", "singlet", "other-upper-body-clothes",
+     "tie", "scarf", "bikini/bra"],
+    ["pants", "shorts/swim-shorts", "skirt", "other-lower-body-clothes", "belt", "stockings"],
+    ["dress", "jumpsuit", "other-full-body-clothes", "robe"],
+    "torso-skin"]
+
 DROP_IMAGES_WITH_CATEGORIES = ["robe"]
 
 DROP_IMAGES_WITH_CATEGORIES_DENSE = ["robe", "other-full-body-clothes", "other-upper-body-clothes",
@@ -113,6 +123,8 @@ DROP_IMAGES_WITH_CATEGORIES_EXTREME = []
 DROP_IMAGES_WITH_CATEGORIES_TINY = []
 
 DROP_IMAGES_WITH_CATEGORIES_VERY_TINY = []
+
+DROP_IMAGES_WITH_CATEGORIES_VERY_EXTREME = []
 
 
 class SegmentationMerge:
