@@ -26,7 +26,7 @@ BATCH_SIZE = 10
 DATA_DIRECTORY = '/home/VOCdevkit'
 DATA_LIST_PATH = './dataset/train.txt'
 IGNORE_LABEL = 255
-INPUT_SIZE = '321,321'
+INPUT_SIZE = '416,416'
 LEARNING_RATE = 2.5e-4
 MOMENTUM = 0.9
 NUM_CLASSES = 21
@@ -188,7 +188,8 @@ def main():
     # Create network.
     sys.stdout.flush()
     sys.stderr.flush()
-    net = DeepLabResNetModel({'data': image_batch}, is_training=args.is_training, num_classes=args.num_classes)
+    net = DeepLabResNetModel({'data': image_batch}, is_training=args.is_training, num_classes=args.num_classes,
+                             add_extra_head=True)
     sys.stdout.flush()
     sys.stderr.flush()
     # For a small batch size, it is better to keep 
@@ -200,6 +201,10 @@ def main():
 
     # Predictions.
     raw_output = net.layers['fc1_voc12']
+    print("Resnet out (res5c_relu):", net.layers['res5c_relu'].shape)
+    print("Stock head out (fc1_voc12_stock):", net.layers["fc1_voc12_stock"].shape)
+    print("Extra head input:", net.layers["extra_head_input"].shape)
+    print("Output (fc1_voc12):", raw_output.shape)
     # Which variables to load. Running means and variances are not trainable,
     # thus all_variables() should be restored.
     all_trainable = [v for v in tf.trainable_variables() if 'beta' not in v.name and 'gamma' not in v.name]
