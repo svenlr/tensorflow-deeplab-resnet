@@ -11,7 +11,7 @@ if __name__ == '__main__':
     with open(data_list, 'r') as f:
         lines = f.read().split('\n')
 
-    print(len(MERGE_LISTS_TINY))
+    print(len(MERGE_LISTS_VERY_EXTREME))
 
     i = 0
     for line in lines:
