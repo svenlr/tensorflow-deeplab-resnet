@@ -133,12 +133,12 @@ def match_loaded_and_memory_tensors(loaded_tensors):
             tensor_aux = tf.get_default_graph().get_tensor_by_name(tensor_name + ":0")
             if not np.array_equal(tensor_aux.shape, tensor_loaded.shape) \
                     and not np.array_equal(tensor_aux.shape, tensor_loaded.shape[::-1]):
-                print('Weight mismatch for tensor {}: mem: {}, loaded: {}'.format(tensor_name, tensor_aux.shape,
-                                                                                  tensor_loaded.shape))
+                print('Weight mismatch for tensor {}: RAM model: {}, Loaded model: {}'.format(tensor_name, tensor_aux.shape,
+                                                                                              tensor_loaded.shape))
             else:
                 full_var_list.append(tensor_aux)
         except:
-            print('Loaded tensor not in model: ' + tensor_name)
+            print('Loaded a tensor from weights file which has not been found in model: ' + tensor_name)
     return full_var_list
 
 
@@ -176,8 +176,8 @@ def main():
             args.data_dir,
             args.data_list,
             input_size,
-            True,  # args.random_scale
-            True,  # args.random_mirror
+            args.random_scale,
+            args.random_mirror,
             args.ignore_label,
             IMG_MEAN,
             coord)
@@ -313,13 +313,16 @@ def main():
             print("Auto restoring weights from " + str(restore_path))
         else:
             restore_path = args.restore_from
-        start_from_step = int(restore_path.split("-")[-1])
-        print("Auto starting from step " + str(start_from_step) + " (detected from checkpoint file)")
-        vars_in_checkpoint = get_tensors_in_checkpoint_file(file_name=restore_path)
-        loadable_tensors = match_loaded_and_memory_tensors(vars_in_checkpoint)
-        loadable_tensors = [v for v in loadable_tensors if 'fc' not in v.name or not args.not_restore_last]
-        loader = tf.train.Saver(var_list=loadable_tensors)
-        load(loader, sess, restore_path)
+        try:
+            start_from_step = int(restore_path.split("-")[-1])
+            print("Auto starting from step " + str(start_from_step) + " (detected from checkpoint file)")
+            vars_in_checkpoint = get_tensors_in_checkpoint_file(file_name=restore_path)
+            loadable_tensors = match_loaded_and_memory_tensors(vars_in_checkpoint)
+            loadable_tensors = [v for v in loadable_tensors if 'fc' not in v.name or not args.not_restore_last]
+            loader = tf.train.Saver(var_list=loadable_tensors)
+            load(loader, sess, restore_path)
+        except ValueError:
+            pass
 
     sys.stdout.flush()
     sys.stderr.flush()
@@ -351,7 +354,7 @@ def main():
         feed_dict = { step_ph : step }
 
         if step % args.save_pred_every == 0 or step == args.num_steps-1:
-            loss_value, images, labels, preds, summary, _ = sess.run([reduced_loss, image_batch, label_batch, pred, total_summary, train_op], feed_dict=feed_dict)
+            loss_value, imgs, lbls, preds, summary, _ = sess.run([reduced_loss, image_batch, label_batch, pred, total_summary, train_op], feed_dict=feed_dict)
             summary_writer.add_summary(summary, step)
             save(saver, sess, snapshot_dir, step)
         else:
@@ -359,8 +362,9 @@ def main():
         loss_sum += loss_value
         num_loss_sum += 1
         duration = time.time() - start_time
-        if should_print(step) or step == num_steps-1:
-            print('{:2.2f}% step {:d}/{:d} \t loss = {:.3f} , ({:.3f} sec/step)'.format(float(step / num_steps) * 100., step, num_steps, loss_sum / num_loss_sum, duration))
+        if should_print(step) or step == args.num_steps - 1:
+            print('{:2.2f}% step {:d}/{:d} \t loss = {:.3f} , ({:.3f} sec/step)'.format(float(step / args.num_steps) * 100., step, args.num_steps,
+                                                                                        loss_sum / num_loss_sum, duration))
             loss_sum = 0
             num_loss_sum = 0
 

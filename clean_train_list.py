@@ -33,12 +33,3 @@ def clean_train_list(train_list_contents):
     output = ''.join(cleaned_list)
 
     return output
-
-
-if __name__ == '__main__':
-    train_list = 'train_mhp2.list'
-    with open(train_list, "r") as f:
-        contents = f.read()
-    output_contents = clean_train_list(contents)
-    with open('cleaned_train_mhp2.list', 'w') as f:
-        f.write(output_contents)

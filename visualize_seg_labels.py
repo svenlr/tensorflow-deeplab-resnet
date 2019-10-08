@@ -1,40 +1,46 @@
+import argparse
+import os
 import sys
 import numpy as np
 import cv2
-import deeplab_resnet.utils
+
 from deeplab_resnet import decode_labels
-from segmentation_util import MERGE_LISTS
 
 if __name__ == '__main__':
-    data_list = sys.argv[1]
+    parser = argparse.ArgumentParser(description="Prepare segmentation data")
+    parser.add_argument("data_list", type=str,
+                        help="list with (image, label) pairs")
+    parser.add_argument("data_dir", type=str, default="",
+                        help="Path to the directory of the dataset.")
+    args = parser.parse_args()
 
-    with open(data_list, 'r') as f:
+    with open(args.data_list, 'r') as f:
         lines = f.read().split('\n')
 
     print(len(lines))
 
     i = 0
     for line in lines:
-        jpg_path, seg_path = line.split('\t')
+        img_path, seg_path = line.split('\t')
+        img_path = os.path.join(args.data_dir, img_path)
+        seg_path = os.path.join(args.data_dir, seg_path)
+
+        if not os.path.exists(seg_path):
+            print("skip non-existent: "+ seg_path)
+            continue
+        if not os.path.exists(img_path):
+            print("skip non-existent: "+ img_path)
+            continue
 
         seg = cv2.imread(seg_path, cv2.IMREAD_UNCHANGED)
 
         seg = np.expand_dims(np.expand_dims(seg, 0), -1)
 
-        # class_idx = MERGE_LISTS.index("carrybag") - 2
-        # class_idx = 18
-        # if np.all(seg != class_idx):
-        #     continue
-        # print(i)
-        # i+= 1
-        # continue
-        # seg[seg != class_idx] = 0
-
-        msk = decode_labels(seg, num_classes=len(MERGE_LISTS))
+        msk = decode_labels(seg, num_classes=np.max(seg) + 1)
         im = msk[0]
-        img_o = cv2.imread(jpg_path)
+        img_o = cv2.imread(img_path)
 
-        jpg_path = str(jpg_path)
+        img_path = str(img_path)
 
         print(im.shape, im.dtype)
         print(img_o.shape, img_o.dtype)

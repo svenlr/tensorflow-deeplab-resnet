@@ -1,15 +1,5 @@
 from PIL import Image
 import numpy as np
-import tensorflow as tf
-
-classes = ["background", "cap/hat", "helmet", "face", "hair", "left-arm", "right-arm", "left-hand", "right-hand",
-              "protector", "bikini/bra", "jacket/windbreaker/hoodie", "t-shirt", "polo-shirt", "sweater", "singlet",
-              "torso-skin", "pants", "shorts/swim-shorts", "skirt", "stockings", "socks", "left-boot", "right-boot",
-              "left-shoe", "right-shoe", "left-highheel", "right-highheel", "left-sandal", "right-sandal", "left-leg",
-              "right-leg", "left-foot", "right-foot", "coat", "dress", "robe", "jumpsuit", "other-full-body-clothes",
-           "headwear", "backpack", "ball", "bats", "belt", "bottle", "carrybag", "cases", "sunglasses", "eyewear",
-              "glove", "scarf", "umbrella", "wallet/purse", "watch", "wristband", "tie", "other-accessary",
-              "other-upper-body-clothes", "other-lower-body-clothes"]
 
 
 def get_spaced_colors(n):
@@ -20,7 +10,7 @@ def get_spaced_colors(n):
     return [(int(i[:2], 16), int(i[2:4], 16), int(i[4:], 16)) for i in colors][::-1]
 
 # colour map
-label_colours = [(0,0,0)] + get_spaced_colors(40) + [hash(name) % 16581375 for name in classes]
+label_colours = [(0,0,0)] + get_spaced_colors(40) + [hash(i) % 16581375 for i in range(100)]
 
 def decode_labels(mask, num_images=1, num_classes=21):
     """Decode batch of segmentation masks.
@@ -59,6 +49,7 @@ def prepare_label(input_batch, new_size, num_classes, one_hot=True):
       Outputs a tensor of shape [batch_size h w 21]
       with last dimension comprised of 0's and 1's only.
     """
+    import tensorflow as tf
     with tf.name_scope('label_encode'):
         input_batch = tf.image.resize_nearest_neighbor(input_batch, new_size) # as labels are integer numbers, need to use NN interp.
         input_batch = tf.squeeze(input_batch, squeeze_dims=[3]) # reducing the channel dimension.
