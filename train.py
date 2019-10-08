@@ -317,14 +317,14 @@ def main():
             restore_path = args.restore_from
         try:
             start_from_step = int(restore_path.split("-")[-1])
-            print("Auto starting from step " + str(start_from_step) + " (detected from checkpoint file)")
-            vars_in_checkpoint = get_tensors_in_checkpoint_file(file_name=restore_path)
-            loadable_tensors = match_loaded_and_memory_tensors(vars_in_checkpoint)
-            loadable_tensors = [v for v in loadable_tensors if 'fc' not in v.name or not args.not_restore_last]
-            loader = tf.train.Saver(var_list=loadable_tensors)
-            load(loader, sess, restore_path)
         except ValueError:
-            pass
+            start_from_step = 0
+        print("Auto starting from step " + str(start_from_step) + " (detected from checkpoint file)")
+        vars_in_checkpoint = get_tensors_in_checkpoint_file(file_name=restore_path)
+        loadable_tensors = match_loaded_and_memory_tensors(vars_in_checkpoint)
+        loadable_tensors = [v for v in loadable_tensors if 'fc' not in v.name or not args.not_restore_last]
+        loader = tf.train.Saver(var_list=loadable_tensors)
+        load(loader, sess, restore_path)
 
     sys.stdout.flush()
     sys.stderr.flush()
