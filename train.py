@@ -364,7 +364,7 @@ def main():
         loss_sum += loss_value
         num_loss_sum += 1
         duration = time.time() - start_time
-        if should_print(step) or step == args.num_steps - 1:
+        if should_print(step) or should_print(step - start_from_step) or step == args.num_steps - 1:
             print('{:2.2f}% step {:d}/{:d} \t loss = {:.3f} , ({:.3f} sec/step)'.format(float(step / args.num_steps) * 100., step, args.num_steps,
                                                                                         loss_sum / num_loss_sum, duration))
             loss_sum = 0
