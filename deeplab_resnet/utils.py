@@ -2,15 +2,6 @@ from PIL import Image
 import numpy as np
 import tensorflow as tf
 
-classes = ["background", "cap/hat", "helmet", "face", "hair", "left-arm", "right-arm", "left-hand", "right-hand",
-              "protector", "bikini/bra", "jacket/windbreaker/hoodie", "t-shirt", "polo-shirt", "sweater", "singlet",
-              "torso-skin", "pants", "shorts/swim-shorts", "skirt", "stockings", "socks", "left-boot", "right-boot",
-              "left-shoe", "right-shoe", "left-highheel", "right-highheel", "left-sandal", "right-sandal", "left-leg",
-              "right-leg", "left-foot", "right-foot", "coat", "dress", "robe", "jumpsuit", "other-full-body-clothes",
-           "headwear", "backpack", "ball", "bats", "belt", "bottle", "carrybag", "cases", "sunglasses", "eyewear",
-              "glove", "scarf", "umbrella", "wallet/purse", "watch", "wristband", "tie", "other-accessary",
-              "other-upper-body-clothes", "other-lower-body-clothes"]
-
 
 def get_spaced_colors(n):
     max_value = 16581375  # 255**3
@@ -20,7 +11,7 @@ def get_spaced_colors(n):
     return [(int(i[:2], 16), int(i[2:4], 16), int(i[4:], 16)) for i in colors][::-1]
 
 # colour map
-label_colours = [(0,0,0)] + get_spaced_colors(40) + [hash(name) % 16581375 for name in classes]
+label_colours = [(0,0,0)] + get_spaced_colors(40) + [hash(i) % 16581375 for i in range(100)]
 
 def decode_labels(mask, num_images=1, num_classes=21):
     """Decode batch of segmentation masks.
