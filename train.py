@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """Training script for the DeepLab-ResNet network on the PASCAL VOC dataset
    for semantic image segmentation.
 
