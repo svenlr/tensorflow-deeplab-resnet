@@ -294,7 +294,7 @@ def main():
             skip_next_arg_print = False
             continue
 
-        if sys.argv[i].startswith('--snapshot-dir'):
+        if sys.argv[i].startswith('--snapshot-dir') or sys.argv[i].startswith('--data-dir') or sys.argv[i].startswith('--restore-from'):
             skip_next_arg_print = True
             continue
         if sys.argv[i].startswith('--'):
